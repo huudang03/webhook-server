@@ -1,9 +1,18 @@
 const express = require("express");
+const cors = require("cors");
+
 const app = express();
+
+// 🔥 FIX CORS (QUAN TRỌNG NHẤT)
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
 
 app.use(express.json());
 
-// 🔥 Lưu trạng thái thanh toán (tạm thời - dùng cho đồ án)
+// 🔥 Lưu trạng thái thanh toán
 let paymentStatus = {};
 
 // ==========================
@@ -24,7 +33,6 @@ app.post("/api/webhooks/payment", (req, res) => {
   console.log("Code:", code);
   console.log("Amount:", amount);
 
-  // 👉 Nếu có mã thì đánh dấu đã thanh toán
   if (code) {
     paymentStatus[code] = "paid";
     console.log("🔥 ĐÃ THANH TOÁN:", code);
@@ -34,7 +42,7 @@ app.post("/api/webhooks/payment", (req, res) => {
 });
 
 // ==========================
-// ✅ API KIỂM TRA THANH TOÁN
+// ✅ API KIỂM TRA
 // ==========================
 app.get("/api/check-payment/:code", (req, res) => {
   const code = req.params.code.toUpperCase();
@@ -45,14 +53,14 @@ app.get("/api/check-payment/:code", (req, res) => {
 });
 
 // ==========================
-// ✅ TEST TRÌNH DUYỆT
+// ✅ TEST
 // ==========================
 app.get("/api/webhooks/payment", (req, res) => {
   res.send("OK");
 });
 
 // ==========================
-// 🚀 RUN SERVER
+// 🚀 RUN
 // ==========================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
