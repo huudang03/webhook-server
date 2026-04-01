@@ -3,7 +3,7 @@ const cors = require("cors");
 
 const app = express();
 
-// 🔥 FIX CORS (QUAN TRỌNG NHẤT)
+// 🔥 FIX CORS (QUAN TRỌNG)
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST"],
@@ -21,7 +21,6 @@ let paymentStatus = {};
 app.post("/api/webhooks/payment", (req, res) => {
   const data = req.body;
 
-  const code = (data.code || "").toUpperCase();
   const amount = parseFloat(
     data.amount ||
     data.transferAmount ||
@@ -29,40 +28,52 @@ app.post("/api/webhooks/payment", (req, res) => {
     0
   );
 
-  console.log("=== NHẬN THANH TOÁN ===");
-  console.log("Code:", code);
+  const content = (data.content || "").toUpperCase();
+
+  console.log("=== NHẬN WEBHOOK ===");
+  console.log("Content:", content);
   console.log("Amount:", amount);
 
-  if (code) {
+  // 🔥 TÁCH MÃ HDxxxTxx TỪ NỘI DUNG
+  const match = content.match(/HD\d+T\d+/);
+
+  if (match) {
+    const code = match[0];
     paymentStatus[code] = "paid";
+
     console.log("🔥 ĐÃ THANH TOÁN:", code);
+  } else {
+    console.log("❌ Không tìm thấy mã HD trong nội dung");
   }
 
-  res.json({ ok: true });
+  return res.json({ ok: true });
 });
 
 // ==========================
-// ✅ API KIỂM TRA
+// ✅ API KIỂM TRA THANH TOÁN
 // ==========================
 app.get("/api/check-payment/:code", (req, res) => {
   const code = req.params.code.toUpperCase();
 
-  res.json({
-    status: paymentStatus[code] || "pending"
-  });
+  const status = paymentStatus[code] || "pending";
+
+  console.log("🔎 CHECK:", code, "=>", status);
+
+  res.json({ status });
 });
 
 // ==========================
-// ✅ TEST
+// ✅ TEST WEBHOOK (TRÌNH DUYỆT)
 // ==========================
 app.get("/api/webhooks/payment", (req, res) => {
   res.send("OK");
 });
 
 // ==========================
-// 🚀 RUN
+// 🚀 CHẠY SERVER
 // ==========================
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+  console.log("🚀 Server running on port", PORT);
 });
